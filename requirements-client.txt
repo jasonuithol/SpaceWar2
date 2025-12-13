@@ -1,0 +1,3 @@
+websockets==15.0.1
+pyglet==2.1.11
+numpy==2.3.4
