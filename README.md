@@ -4,10 +4,10 @@ To run the game:
    pip install websockets pyglet numpy
 
 2. Start the server (in one terminal):
-   server.cmd
+   python server.py
 
 3. Start clients (in separate terminals, up to 4):
-   client.cmd
+   python main.py
 
 Controls:
 - Arrow Keys / WASD: Rotate and thrust
@@ -25,5 +25,3 @@ Each client:
 - Sends inputs to server
 - Receives game state updates
 - Renders locally with Pyglet
-
-Have fun!

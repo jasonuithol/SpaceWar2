@@ -21,7 +21,7 @@ class SpacewarClient:
         
         # Set up window event handlers
         self.renderer.window.push_handlers(
-            on_key_press=self.input_handler.on_key_press,
+            on_key_press=self.on_key_press,
             on_key_release=self.input_handler.on_key_release,
             on_draw=self.on_draw
         )
@@ -29,6 +29,15 @@ class SpacewarClient:
         self.input_send_interval = 1/30  # Send inputs 30 times per second
         self.running = True
         self.first_state_received = False
+    
+    def on_key_press(self, symbol, modifiers):
+        """Handle key press including ESC to quit"""
+        from pyglet.window import key
+        if symbol == key.ESCAPE:
+            self.running = False
+            self.renderer.window.close()
+        else:
+            self.input_handler.on_key_press(symbol, modifiers)
         
     def on_state_update(self, state_data):
         """Called when server sends game state"""
