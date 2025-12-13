@@ -13,6 +13,7 @@ Controls:
 - Arrow Keys / WASD: Rotate and thrust
 - SPACE: Shoot
 - R: Respawn (when dead)
+- ESC: Quit
 
 The server handles:
 - Physics simulation (60Hz)
