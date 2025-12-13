@@ -5,6 +5,7 @@ from pyglet.math import Mat4, Vec3
 import math
 import random
 import numpy as np
+import time
 
 # Vertex shader
 # Note: layout(std140) ensures the block matches Pyglet's internal memory layout
@@ -264,30 +265,43 @@ class Renderer:
         # Optimized approach: Pass color as Uniform, but shader expects attribute.
         # We will rebuild the ship VList for this specific implementation.
         vertices, normals = self.pyramid_data
-        
+
+        # We use time.time() to get a continuous value for the rotation angle
+        anim_time = time.time()
+
         for ship in game_state.ships.values():
             if not ship.alive:
                 continue
             
             color_rgb = self.player_colors[ship.player_id % len(self.player_colors)]
             
-            # Create matrices explicitly to ensure order
-            # 1. Scale the ship to size (Local)
+            # --- MATRICES ---
+            
+            # 1. Scale (Local)
             scale_mat = Mat4().scale(Vec3(15, 15, 15))
             
-            # 2. Rotate around Z axis (Local spin)
-            # Note: Ensure ship.angle is in RADIANS. If it's degrees, use math.radians(ship.angle)
-            rot_mat = Mat4().rotate(ship.angle - math.pi/2, Vec3(0, 0, 1))
+            # 2. Roll / Spin Animation (Local)
+            # We rotate around Y because our pyramid model "points" up the Y axis.
+            # 5.0 is the speed of the spin (radians per second).
+            roll_angle = anim_time * 5.0  
+            roll_mat = Mat4().rotate(roll_angle, Vec3(0, 1, 0))
             
-            # 3. Move to position (World)
+            # 3. Heading / Direction (World Orientation)
+            # This orients the spinning ship to face its travel direction
+            heading_mat = Mat4().rotate(ship.angle - math.pi/2, Vec3(0, 0, 1))
+            
+            # 4. Position (World Space)
             trans_mat = Mat4().translate(Vec3(ship.position[0], ship.position[1], 0))
             
-            # Combine: Translate * Rotate * Scale
-            # (Math applies right-to-left: Scale first, then Rotate, then Translate)
-            ship_model = trans_mat @ rot_mat @ scale_mat
+            # Combine: Translate @ Heading @ Roll @ Scale
+            # This order is CRITICAL.
+            ship_model = trans_mat @ heading_mat @ roll_mat @ scale_mat
             
-            # ... render code ...
+            # --- RENDER ---
+            
+            # Create color array (since we aren't using uniforms for color yet)
             colors = color_rgb * (len(vertices) // 3)
+            
             self.shader_program['model'] = ship_model
             self.shader_program['isEmissive'] = False
             self.shader_program['sunPosition'] = self.sun_pos
