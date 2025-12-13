@@ -65,16 +65,16 @@ class GameServer:
         
         # Spawn positions (corners)
         spawn_positions = [
-            np.array([100.0, 100.0]),
-            np.array([WORLD_WIDTH - 100, 100.0]),
-            np.array([100.0, WORLD_HEIGHT - 100]),
-            np.array([WORLD_WIDTH - 100, WORLD_HEIGHT - 100])
+            np.array([100.0, 100.0], dtype=float),
+            np.array([WORLD_WIDTH - 100, 100.0], dtype=float),
+            np.array([100.0, WORLD_HEIGHT - 100], dtype=float),
+            np.array([WORLD_WIDTH - 100, WORLD_HEIGHT - 100], dtype=float)
         ]
         
         self.ships[player_id] = Ship(
             player_id=player_id,
             position=spawn_positions[player_id % 4].copy(),
-            velocity=np.zeros(2),
+            velocity=np.zeros(2, dtype=float),
             angle=0.0
         )
         
@@ -145,13 +145,13 @@ class GameServer:
             # Respawn
             if inputs.get("respawn") and not ship.alive:
                 spawn_positions = [
-                    np.array([100.0, 100.0]),
-                    np.array([WORLD_WIDTH - 100, 100.0]),
-                    np.array([100.0, WORLD_HEIGHT - 100]),
-                    np.array([WORLD_WIDTH - 100, WORLD_HEIGHT - 100])
+                    np.array([100.0, 100.0], dtype=float),
+                    np.array([WORLD_WIDTH - 100, 100.0], dtype=float),
+                    np.array([100.0, WORLD_HEIGHT - 100], dtype=float),
+                    np.array([WORLD_WIDTH - 100, WORLD_HEIGHT - 100], dtype=float)
                 ]
                 ship.position = spawn_positions[player_id % 4].copy()
-                ship.velocity = np.zeros(2)
+                ship.velocity = np.zeros(2, dtype=float)
                 ship.angle = 0.0
                 ship.alive = True
                 continue
