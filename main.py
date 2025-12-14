@@ -7,7 +7,7 @@ import pyglet
 from network import NetworkClient
 from game_state import GameState
 from input import InputHandler
-from renderer import Renderer
+from rendering import Renderer
 
 class SpacewarClient:
     def __init__(self):

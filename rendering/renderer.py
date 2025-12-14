@@ -1,3 +1,4 @@
+
 import pyglet
 from pyglet.gl import *
 from pyglet.graphics import shader
@@ -6,69 +7,7 @@ import math
 import random
 import numpy as np
 import time
-
-# Vertex shader
-# Note: layout(std140) ensures the block matches Pyglet's internal memory layout
-VERTEX_SHADER = """#version 330 core
-in vec3 position;
-in vec3 normal;
-in vec3 colors;
-
-out vec3 vertex_colors;
-out vec3 fragPosition;
-out vec3 fragNormal;
-
-layout(std140) uniform WindowBlock {
-    mat4 projection;
-    mat4 view;
-} window;
-
-uniform mat4 model;
-
-void main() {
-    vec4 worldPos = model * vec4(position, 1.0);
-    fragPosition = worldPos.xyz;
-    fragNormal = mat3(transpose(inverse(model))) * normal;
-    vertex_colors = colors;
-    
-    gl_Position = window.projection * window.view * worldPos;
-}
-"""
-
-# Fragment shader
-FRAGMENT_SHADER = """#version 330 core
-in vec3 vertex_colors;
-in vec3 fragPosition;
-in vec3 fragNormal;
-
-out vec4 finalColor;
-
-uniform vec3 sunPosition;
-uniform bool isEmissive;
-
-void main() {
-    if (isEmissive) {
-        finalColor = vec4(vertex_colors, 1.0);
-    } else {
-        // Ambient (space glow)
-        vec3 ambient = 0.25 * vertex_colors;
-        
-        // Diffuse from sun
-        vec3 lightDir = normalize(sunPosition - fragPosition);
-        vec3 norm = normalize(fragNormal);
-        float diff = max(dot(norm, lightDir), 0.0);
-        
-        // Distance attenuation
-        float distance = length(sunPosition - fragPosition);
-        float attenuation = 1.0 / (1.0 + 0.001 * distance + 0.000005 * distance * distance);
-        
-        vec3 sunColor = vec3(1.0, 0.85, 0.6);
-        vec3 diffuse = diff * sunColor * vertex_colors * attenuation;
-        
-        finalColor = vec4(ambient + diffuse, 1.0);
-    }
-}
-"""
+import os
 
 class Renderer:
     def __init__(self):
@@ -103,6 +42,13 @@ class Renderer:
     
     def create_shader(self):
         """Create shader program"""
+
+        with open(os.path.join("shaders", "main.vert"), "r") as f:
+            VERTEX_SHADER = f.read()
+
+        with open(os.path.join("shaders", "main.frag"), "r") as f:
+            FRAGMENT_SHADER = f.read()
+
         self.shader_program = shader.ShaderProgram(
             shader.Shader(VERTEX_SHADER, 'vertex'),
             shader.Shader(FRAGMENT_SHADER, 'fragment')

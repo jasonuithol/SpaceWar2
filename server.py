@@ -10,20 +10,8 @@ from dataclasses import dataclass, asdict
 from typing import Set
 import time
 
-# Game constants
-WORLD_WIDTH = 800
-WORLD_HEIGHT = 600
-SUN_RADIUS = 30
-SUN_MASS = 5000
-SHIP_MASS = 1
-GRAVITY_CONSTANT = 1000
-SHIP_THRUST = 200
-SHIP_ROTATION_SPEED = 3.0
-BULLET_SPEED = 300
-BULLET_LIFETIME = 3.0
-TICK_RATE = 60
-SHIP_RADIUS = 15
-BULLET_RADIUS = 3
+# --- Import Configuration ---
+from config import *
 
 @dataclass
 class Ship:
