@@ -9,6 +9,9 @@ import numpy as np
 import time
 import os
 
+# --- NEW IMPORTS ---
+from . import geometry
+
 class Renderer:
     def __init__(self):
         # Config must be imported from pyglet.gl
@@ -58,71 +61,19 @@ class Renderer:
         # or just reuse the main shader with emissive=True
         
     def init_geometry(self):
-        """Create and store VertexLists for objects"""
+        """Initialize geometry by loading assets and generating sphere mesh"""
         
         # --- Pyramid (Ship) ---
-        # Centered: Tip is at Y=+0.5, Base is at Y=-0.5
-        # This ensures it spins purely in place like a top.
-        pyramid_vertices = [
-            # Front face
-            0.0, 0.5, 0.0,    0.5, -0.5, 0.5,   -0.5, -0.5, 0.5,
-            # Left face  
-            0.0, 0.5, 0.0,   -0.5, -0.5, 0.5,  -0.5, -0.5, -0.5,
-            # Back face
-            0.0, 0.5, 0.0,   -0.5, -0.5, -0.5,  0.5, -0.5, -0.5,
-            # Right face
-            0.0, 0.5, 0.0,    0.5, -0.5, -0.5,  0.5, -0.5, 0.5,
-            # Base (Two triangles making a square)
-            0.5, -0.5, 0.5,  -0.5, -0.5, 0.5,  -0.5, -0.5, -0.5,
-            0.5, -0.5, 0.5,  -0.5, -0.5, -0.5,  0.5, -0.5, -0.5,
-        ]
-        
-        pyramid_normals = []
-        for i in range(0, len(pyramid_vertices), 9):
-            v1 = np.array(pyramid_vertices[i:i+3])
-            v2 = np.array(pyramid_vertices[i+3:i+6])
-            v3 = np.array(pyramid_vertices[i+6:i+9])
-            edge1 = v2 - v1
-            edge2 = v3 - v1
-            normal = np.cross(edge1, edge2)
-            normal = normal / (np.linalg.norm(normal) + 1e-10)
-            pyramid_normals.extend(list(normal) * 3)
-            
-        # We create the vertex list once. 
-        # Note: We will use a white color by default and modulate it or using uniforms if we wanted
-        # But since the shader expects 'in vec3 colors', we must provide them.
-        # We'll create a generic white ship and recolor in shader or just rebuild for simplicity.
-        # For this example, we will store the raw data and build the list on draw if color changes,
-        # OR better, pass color as a uniform. But sticking to your shader structure:
-        self.pyramid_data = (pyramid_vertices, pyramid_normals)
+        pyramid = geometry.init_pyramid_geometry() # <-- Load from OBJ
+        self.pyramid_data = (pyramid.vertices, pyramid.normals)
 
         # --- Sphere (Sun/Bullets) ---
-        slices, stacks = 16, 16
-        s_vertices = []
-        s_normals = []
-        s_indices = []
+        sphere = geometry.init_sphere_geometry() # <-- Programmatic generation
+        s_vertices, s_normals, s_indices = sphere.vertices, sphere.normals, sphere.indices
         
-        for i in range(stacks + 1):
-            lat = math.pi * (-0.5 + float(i) / stacks)
-            y = math.sin(lat)
-            r = math.cos(lat)
-            for j in range(slices + 1):
-                lon = 2 * math.pi * float(j) / slices
-                x = r * math.cos(lon)
-                z = r * math.sin(lon)
-                s_vertices.extend([x, y, z])
-                s_normals.extend([x, y, z])
-        
-        for i in range(stacks):
-            for j in range(slices):
-                first = i * (slices + 1) + j
-                second = first + slices + 1
-                s_indices.extend([first, second, first + 1, second, second + 1, first + 1])
-                
         self.sphere_data = (s_vertices, s_normals, s_indices)
 
         # Create the reusable VertexList for the sphere (White default)
-        # We can use this for the Sun and Bullets
         white_colors = (1.0, 1.0, 1.0) * (len(s_vertices) // 3)
         self.sphere_vlist = self.shader_program.vertex_list_indexed(
             len(s_vertices) // 3, GL_TRIANGLES, s_indices,
