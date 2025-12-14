@@ -1,26 +1,23 @@
 # rendering/geometry.py
 
-import numpy as np
 import os
 import math
+from collections import namedtuple
 
-class GeometryData:
-    """A container for vertices, normals, and indices."""
-    def __init__(self, vertices, normals, indices=None):
-        self.vertices = vertices
-        self.normals = normals
-        self.indices = indices
+SphereData = namedtuple('SphereData', ['vertices', 'normals', 'indices'])
+GeometryData = namedtuple('GeometryData', ['vertices', 'normals', 'tex_coords'])
 
 def load_obj(filename):
     """
-    Loads geometry data from a simple Wavefront .OBJ file.
-    Assumes all faces are triangles and uses the format 'v//vn'.
+    Loads geometry data from a Wavefront .OBJ file with texture coordinates.
+    Assumes all faces are triangles and uses the format 'v/vt/vn'.
     """
     filepath = os.path.join("assets", filename)
     filepath = os.path.abspath(filepath)
     
     vertices = []
     normals = []
+    tex_coords = []
     faces = []
     
     try:
@@ -33,28 +30,47 @@ def load_obj(filename):
                 parts = line.split()
                 if parts[0] == 'v':
                     vertices.extend([float(parts[1]), float(parts[2]), float(parts[3])])
+                elif parts[0] == 'vt':
+                    tex_coords.extend([float(parts[1]), float(parts[2])])
                 elif parts[0] == 'vn':
                     normals.extend([float(parts[1]), float(parts[2]), float(parts[3])])
                 elif parts[0] == 'f':
                     for part in parts[1:]:
-                        v_idx, _, vn_idx = part.split('/')
-                        faces.append((int(v_idx), int(vn_idx)))
+                        # Handle both v/vt/vn and v//vn formats
+                        indices = part.split('/')
+                        v_idx = int(indices[0])
+                        vt_idx = int(indices[1]) if len(indices) > 1 and indices[1] else None
+                        vn_idx = int(indices[2]) if len(indices) > 2 else None
+                        faces.append((v_idx, vt_idx, vn_idx))
     except FileNotFoundError:
         print(f"Error: Asset file not found at {filepath}")
         raise
-
-    # Flatten the data by repeating vertices/normals per face
+    
+    # Flatten the data by repeating vertices/normals/tex_coords per face
     pyglet_vertices = []
     pyglet_normals = []
+    pyglet_tex_coords = []
     
-    for v_idx, vn_idx in faces:
+    for v_idx, vt_idx, vn_idx in faces:
+        # Add vertex
         v_start_index = (v_idx - 1) * 3
-        vn_start_index = (vn_idx - 1) * 3
-        
         pyglet_vertices.extend(vertices[v_start_index : v_start_index + 3])
-        pyglet_normals.extend(normals[vn_start_index : vn_start_index + 3])
         
-    return GeometryData(pyglet_vertices, pyglet_normals)
+        # Add normal
+        if vn_idx:
+            vn_start_index = (vn_idx - 1) * 3
+            pyglet_normals.extend(normals[vn_start_index : vn_start_index + 3])
+        else:
+            pyglet_normals.extend([0.0, 0.0, 1.0])  # Default normal
+        
+        # Add texture coordinate
+        if vt_idx:
+            vt_start_index = (vt_idx - 1) * 2
+            pyglet_tex_coords.extend(tex_coords[vt_start_index : vt_start_index + 2])
+        else:
+            pyglet_tex_coords.extend([0.0, 0.0])  # Default UV
+    
+    return GeometryData(pyglet_vertices, pyglet_normals, pyglet_tex_coords)
 
 
 def init_pyramid_geometry():
@@ -86,4 +102,4 @@ def init_sphere_geometry(slices=16, stacks=16):
             # Two triangles make a quad: (first, second, first+1), (second, second+1, first+1)
             s_indices.extend([first, second, first + 1, second, second + 1, first + 1])
     
-    return GeometryData(s_vertices, s_normals, s_indices)
+    return SphereData(s_vertices, s_normals, s_indices)

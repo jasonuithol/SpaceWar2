@@ -1,5 +1,4 @@
-# assets/pyramid.obj - Ship Model (Centered Pyramid)
-
+# assets/pyramid.obj - Ship Model (Centered Pyramid with Texture Coords)
 # Vertices (v x y z) - Matches your vertices, normalized to unit size
 v 0.0 0.5 0.0
 v 0.5 -0.5 0.5
@@ -7,17 +6,34 @@ v -0.5 -0.5 0.5
 v -0.5 -0.5 -0.5
 v 0.5 -0.5 -0.5
 
+# Texture Coordinates (vt u v)
+# Tip of pyramid
+vt 0.5 1.0
+# Base corners for side faces
+vt 0.0 0.0
+vt 1.0 0.0
+# Base texture coords for base face
+vt 0.0 0.0
+vt 1.0 0.0
+vt 1.0 1.0
+vt 0.0 1.0
+
 # Normals (vn x y z) - Calculated normals for each face
 vn 0.000 0.555 0.832  # Front
 vn -0.832 0.555 0.000 # Left
 vn 0.000 0.555 -0.832 # Back
 vn 0.832 0.555 0.000  # Right
-vn 0.0 -1.0 0.0      # Base
+vn 0.0 -1.0 0.0       # Base
 
-# Faces (f v/vt/vn) - Faces that match your triangle definition
-f 1//1 2//1 3//1
-f 1//2 3//2 4//2
-f 1//3 4//3 5//3
-f 1//4 5//4 2//4
-f 2//5 3//5 4//5
-f 2//5 4//5 5//5
+# Faces (f v/vt/vn) - Triangle faces with texture coordinates
+# Front face
+f 1/1/1 2/2/1 3/3/1
+# Left face
+f 1/1/2 3/2/2 4/3/2
+# Back face
+f 1/1/3 4/2/3 5/3/3
+# Right face
+f 1/1/4 5/2/4 2/3/4
+# Base (two triangles)
+f 2/4/5 3/5/5 4/6/5
+f 2/4/5 4/6/5 5/7/5

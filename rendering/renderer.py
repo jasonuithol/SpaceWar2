@@ -3,14 +3,11 @@ import pyglet
 from pyglet.gl import *
 from pyglet.graphics import shader
 from pyglet.math import Mat4, Vec3
-import math
 import random
-import numpy as np
-import time
 import os
 
-# --- NEW IMPORTS ---
 from . import geometry
+from .spacecraft_renderer import SpacecraftManager
 
 class Renderer:
     def __init__(self):
@@ -35,7 +32,10 @@ class Renderer:
         # Initialize geometry once (Performance fix)
         self.init_geometry()
         self.init_stars()
-    
+
+        self.spacecraft_manager = SpacecraftManager()
+        self.spacecraft_manager.init_geometry(self.shader_program, self.pyramid)
+
     def setup_opengl(self):
         """Initialize OpenGL state"""
         glEnable(GL_DEPTH_TEST)
@@ -64,8 +64,7 @@ class Renderer:
         """Initialize geometry by loading assets and generating sphere mesh"""
         
         # --- Pyramid (Ship) ---
-        pyramid = geometry.init_pyramid_geometry() # <-- Load from OBJ
-        self.pyramid_data = (pyramid.vertices, pyramid.normals)
+        self.pyramid = geometry.init_pyramid_geometry() # <-- Load from OBJ
 
         # --- Sphere (Sun/Bullets) ---
         sphere = geometry.init_sphere_geometry() # <-- Programmatic generation
@@ -156,59 +155,9 @@ class Renderer:
             self.draw_mesh(self.sphere_vlist, bullet_model, is_emissive=True)
 
         # Draw Ships
-        # Note: Because ships have different colors, we can't easily reuse one static VBO
-        # without a 'color' uniform. To keep this robust but simple, we create a
-        # temporary VList for the ship if the color differs, or just rebuild it.
-        # Optimized approach: Pass color as Uniform, but shader expects attribute.
-        # We will rebuild the ship VList for this specific implementation.
-        vertices, normals = self.pyramid_data
-
-        # We use time.time() to get a continuous value for the rotation angle
-        anim_time = time.time()
-
-        for ship in game_state.ships.values():
-            if not ship.alive:
-                continue
-            
-            color_rgb = self.player_colors[ship.player_id % len(self.player_colors)]
-            
-            # --- MATRICES ---
-            
-            # 1. Scale (Local)
-            scale_mat = Mat4().scale(Vec3(15, 15, 15))
-            
-            # 2. Roll / Spin Animation (Local)
-            # We rotate around Y because our pyramid model "points" up the Y axis.
-            # 5.0 is the speed of the spin (radians per second).
-            roll_angle = anim_time * 5.0  
-            roll_mat = Mat4().rotate(roll_angle, Vec3(0, 1, 0))
-            
-            # 3. Heading / Direction (World Orientation)
-            # This orients the spinning ship to face its travel direction
-            heading_mat = Mat4().rotate(ship.angle - math.pi/2, Vec3(0, 0, 1))
-            
-            # 4. Position (World Space)
-            trans_mat = Mat4().translate(Vec3(ship.position[0], ship.position[1], 0))
-            
-            # Combine: Translate @ Heading @ Roll @ Scale
-            # This order is CRITICAL.
-            ship_model = trans_mat @ heading_mat @ roll_mat @ scale_mat
-            
-            # --- RENDER ---
-            
-            # Create color array (since we aren't using uniforms for color yet)
-            colors = color_rgb * (len(vertices) // 3)
-            
-            self.shader_program['model'] = ship_model
-            self.shader_program['isEmissive'] = False
-            self.shader_program['sunPosition'] = self.sun_pos
-            
-            self.shader_program.vertex_list(
-                len(vertices) // 3, GL_TRIANGLES,
-                position=('f', vertices),
-                normal=('f', normals),
-                colors=('f', colors)
-            ).draw(GL_TRIANGLES)
+        self.shader_program['useTexture'] = True  # Enable textures
+        self.spacecraft_manager.render_spacecraft(game_state)
+        self.shader_program['useTexture'] = False  # Disable for other objects     
 
         # 2. 2D HUD PASS
         # ---------------------------------------------------------
